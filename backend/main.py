@@ -17,7 +17,7 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,6 +77,7 @@ class LeadCreate(BaseModel):
     interest_level: str  # low, medium, high
     notes: Optional[str] = None
     collected_by: str  # user_id
+    source: Optional[str] = "internal"  # internal, landing_page
 
 class Lead(BaseModel):
     id: int
@@ -253,6 +254,46 @@ async def get_company(company_id: int, current_user: dict = Depends(get_current_
     return Company(**company)
 
 # ─── LEADS ENDPOINTS ───────────────────────────────────────────
+
+@app.post("/api/leads/public", response_model=Lead)
+async def create_public_lead(lead: LeadCreate):
+    """Endpoint público para receber leads da landing page"""
+    # Auto-create company if needed
+    company = next((c for c in companies_db if c["id"] == lead.company_id), None)
+    if not company:
+        # Create company automatically for landing page leads
+        new_company = {
+            "id": len(companies_db) + 1,
+            "name": lead.company_id if isinstance(lead.company_id, str) else f"Company {lead.company_id}",
+            "cnpj": None,
+            "segment": "unknown",
+            "size": "unknown",
+            "contact_person": lead.contact_name,
+            "contact_email": lead.contact_email,
+            "phone": lead.contact_phone,
+            "address": None,
+            "created_at": datetime.utcnow()
+        }
+        companies_db.append(new_company)
+        company_id = new_company["id"]
+    else:
+        company_id = company["id"]
+    
+    new_lead = {
+        "id": len(leads_db) + 1,
+        "company_id": company_id,
+        "contact_name": lead.contact_name,
+        "contact_email": lead.contact_email,
+        "contact_phone": lead.contact_phone,
+        "position": lead.position,
+        "interest_level": lead.interest_level,
+        "notes": lead.notes,
+        "collected_by": "landing_page",
+        "created_at": datetime.utcnow()
+    }
+    leads_db.append(new_lead)
+    
+    return Lead(**new_lead)
 
 @app.post("/api/leads", response_model=Lead)
 async def create_lead(lead: LeadCreate, current_user: dict = Depends(get_current_user)):
