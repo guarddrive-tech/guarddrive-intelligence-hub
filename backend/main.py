@@ -68,8 +68,10 @@ class Company(BaseModel):
     phone: str
     created_at: datetime
 
+from typing import Optional, List, Union, Any
+
 class LeadCreate(BaseModel):
-    company_id: int
+    company_id: Union[int, str]
     contact_name: str
     contact_email: EmailStr
     contact_phone: str
