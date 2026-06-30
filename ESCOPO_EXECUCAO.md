@@ -2,9 +2,9 @@
 
 ## 📋 STATUS ATUAL
 
-**Data**: 17/06/2026  
-**Versão**: 1.0  
-**Status**: Em Desenvolvimento
+**Data**: 30/06/2026  
+**Versão**: 1.1  
+**Status**: Avançado - Dashboard Completo Implementado
 
 ---
 
@@ -30,9 +30,13 @@
 - [x] **Roles de Usuário**: researcher, analyst, admin
 - [x] **Endpoint Público**: /api/leads/public para receber leads da landing page
 - [x] **CORS Configurado**: Para porta 8000 (landing page)
-- [x] **Frontend Next.js**: Login, registro, dashboard
-- [x] **Dashboard**: Stats, quick actions, Data Room embrionário, visualizadores
-- [x] **Design**: Dark premium com gradientes cyan/purple
+- [x] **Frontend Next.js**: Login, registro, dashboard completo
+- [x] **Dashboard Avançado**: 5 seções (Overview, Leads, Data Room, Inteligência, Settings)
+- [x] **Visualizadores**: Segmentos de mercado, dores validadas, leads recentes
+- [x] **Data Room**: 6 documentos estratégicos (Visão Executiva, Prova Técnica, Análise de Mercado, Roadmap, Protocolo Symbeon, Proposta Edital)
+- [x] **Inteligência de Mercado**: KPIs TAM/SAM/SOM, insights chave, próximos ações
+- [x] **Gestão de Leads**: Tabela completa com filtros, status badges, origem tracking
+- [x] **Design**: Dark premium com gradientes cyan/purple, animações suaves
 
 ### 3. INTEGRAÇÃO LANDING PAGE ↔ INTELLIGENCE HUB
 - [x] **Backend Landing Page**: Modificado para enviar leads automaticamente
@@ -46,6 +50,9 @@
 - [x] **Intelligence Hub**: Repositório GitHub criado (https://github.com/guarddrive-tech/guarddrive-intelligence-hub)
 - [x] **Commits Realizados**: Ambos projetos commitados e pushados
 - [x] **requirements.txt**: Criado para backend da landing page
+- [x] **Dependências Atualizadas**: Next.js 15.3.9, Recharts 3.0.0, correção de vulnerabilidades
+- [x] **Configuração Produção**: lib/api.ts centralizado, next.config.js com lógica dev/prod
+- [x] **Build Local**: .next/ gerado, node_modules/ instalado
 
 ---
 
@@ -58,10 +65,10 @@
 - [ ] Configurar variáveis de ambiente (SECRET_KEY, etc.)
 
 ### 2. INTELLIGENCE HUB - DESENVOLVIMENTO
-- [ ] Desenvolver visualizadores interativos (gráficos, mapas)
-- [ ] Implementar dashboard de inteligência de mercado
-- [ ] Criar módulo de informações lapidadas
-- [ ] Popular Data Room com conteúdo real
+- [x] Desenvolver visualizadores interativos (gráficos, mapas)
+- [x] Implementar dashboard de inteligência de mercado
+- [x] Criar módulo de informações lapidadas
+- [x] Popular Data Room com conteúdo real (6 documentos estratégicos)
 - [ ] Integrar com banco de dados PostgreSQL (atualmente mock)
 - [ ] Criar dashboards específicos para editais
 
@@ -72,8 +79,8 @@
 - [ ] Adicionar logs detalhados de integração
 
 ### 4. DOCUMENTAÇÃO
-- [ ] Criar pasta de codemaps no ecossystem
-- [ ] Gerar codemap da arquitetura completa
+- [x] Criar pasta de codemaps no ecossystem
+- [x] Gerar codemap da arquitetura completa
 - [ ] Documentar API da Intelligence Hub
 - [ ] Criar guia de uso para escritório RS e Adriano
 
