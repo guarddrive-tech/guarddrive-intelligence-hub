@@ -6,6 +6,8 @@ import hashlib
 import random
 from datetime import datetime
 import os
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives import serialization
 
 # Força UTF-8 em stdout/stderr (necessário no Windows)
 if hasattr(sys.stdout, "reconfigure"):
@@ -15,11 +17,44 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # Base paths
 DATASET_PATH = "dataset/forensic_dataset.jsonl"
+KEY_PATH = os.path.join(os.path.dirname(__file__), "themis_private_key.pem")
+
+def get_or_create_keys():
+    """Recupera ou gera chaves Ed25519 para assinatura dos laudos."""
+    # 1. Tentar ler da env
+    env_key = os.environ.get("THEMIS_PRIVATE_KEY")
+    if env_key:
+        try:
+            return ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(env_key))
+        except Exception:
+            pass
+
+    # 2. Tentar ler do arquivo
+    if os.path.exists(KEY_PATH):
+        try:
+            with open(KEY_PATH, "rb") as f:
+                return serialization.load_pem_private_key(f.read(), password=None)
+        except Exception:
+            pass
+
+    # 3. Gerar nova chave
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    try:
+        with open(KEY_PATH, "wb") as f:
+            f.write(pem)
+    except Exception as e:
+        sys.stderr.write(f"[WARNING] Não foi possível persistir a chave privada: {e}\n")
+    return private_key
 
 def generate_forensic_report(event_data: dict) -> str:
     """
     Gera um laudo técnico-jurídico automatizado baseado em telemetria física-óptica.
-    Adota termos do Hexágono Legislativo brasileiro e preserva o IP da Symbeon Labs.
+    Adota termos do Hexágono Legislativo brasileiro e assina criptograficamente via Ed25519.
     """
     gtid = event_data.get("gtid", "GD-UNKNOWN")
     score = event_data.get("score", 0.0)
@@ -32,8 +67,20 @@ def generate_forensic_report(event_data: dict) -> str:
     timestamp = datetime.utcnow().isoformat() + "Z"
     report_id = hashlib.md5(f"{gtid}-{timestamp}".encode('utf-8')).hexdigest()[:12].upper()
     block_num = random.randint(180000, 250000)
-    tx_hash = "0x" + hashlib.sha256(f"{report_id}-{block_num}".encode('utf-8')).hexdigest()
     
+    # Setup de chaves Ed25519
+    try:
+        priv_key = get_or_create_keys()
+        pub_key = priv_key.public_key()
+        pub_hex = pub_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw
+        ).hex()
+    except Exception as e:
+        sys.stderr.write(f"[WARNING] Erro ao carregar chaves criptográficas: {e}\n")
+        pub_hex = "N/A"
+        priv_key = None
+
     rf_consistency_desc = "CONFORME (Assinatura NFC/UHF Válida)" if rf_consistency == 1.0 else "DIVERGENTE (Ausência ou falha de sinal de rádiofrequência)"
     
     status = "AUTÊNTICO" if score >= 85.0 else "SUSPEITO"
@@ -62,7 +109,7 @@ def generate_forensic_report(event_data: dict) -> str:
             "ou remoção física do selo. O ativo é classificado como de alto risco operacional."
         )
         
-    report = f"""================================================================================
+    report_body = f"""================================================================================
           LAUDO TÉCNICO-JURÍDICO AUTOMATIZADO — INICIATIVA GUARDDRIVE™
                      REGISTRO DE EVIDÊNCIA FORENSE VEICULAR
 ================================================================================
@@ -106,7 +153,7 @@ exame é classificado como:
 - Justificativa Analítica: {justificativa}
 
 5. RESERVA DE PROPRIEDADE INTELECTUAL E SEGURANÇA DE ATIVOS INTEGRADOS
-AVISO DE SEGURANÇA E PROPRIEDADE INTELECTUAL (Symbeon Labs):
+    AVISO DE SEGURANÇA E PROPRIEDADE INTELECTUAL (Symbeon Labs):
 Este relatório e os algoritmos de inferência forense subjacentes constituem
 propriedade intelectual exclusiva da Symbeon Labs, protegidos nos termos da Lei nº
 9.279/1996 (Propriedade Industrial) e da Lei nº 9.609/1998 (Proteção de Software).
@@ -114,15 +161,26 @@ O uso desta tecnologia pela GuardDrive Tech é limitado aos termos do Acordo de
 Licenciamento Exclusivo para mobilidade e telemetria veicular. Qualquer tentativa de engenharia
 reversa do hardware GuardTag ou das chaves de atestação Symbeon resultará na rescisão
 imediata da licença e sanções civis e criminais cabíveis.
+"""
 
-6. ASSINATURA ELETRÔNICA E SELO CRIPTOGRÁFICO
-Gerado por: Magistrado Themis AI Engine v0.1.0
-Selo Criptográfico: {tx_hash}
-Protocolado sob o Bloco: {block_num}
+    # Geração da assinatura Ed25519 real
+    report_bytes = report_body.strip().encode('utf-8')
+    if priv_key:
+        signature = priv_key.sign(report_bytes).hex()
+    else:
+        signature = "ASSINATURA_INDISPONIVEL_SEM_CHAVE_PRIVADA"
+
+    report = f"""{report_body}
+6. CERTIFICADO DE AUTENTICIDADE E NÃO-REPÚDIO — SYMBEON LABS
+Gerado por: Magistrado Themis Engine v0.2.0
+Assinatura Digital Ed25519: {signature}
+Chave Pública de Validação: {pub_hex}
+Protocolado sob o Bloco L2: {block_num}
 --------------------------------------------------------------------------------
          CONFIDENCIAL — SEGREDO INDUSTRIAL — INICIATIVA GUARDDRIVE™
 ================================================================================
 """
+
     # Active Learning Loop - Salva no dataset de treino
     try:
         os.makedirs(os.path.dirname(DATASET_PATH), exist_ok=True)
@@ -207,3 +265,154 @@ def run_security_check(arguments: dict) -> dict:
         "recommendations": recommendations,
         "checked_at": datetime.utcnow().isoformat() + "Z"
     }
+
+def main():
+    sys.stderr.write("Magistrado Themis AI MCP Server iniciado via stdio.\n")
+    while True:
+        try:
+            line = sys.stdin.readline()
+            if not line:
+                break
+            
+            # Sanitiza a entrada
+            line = line.strip()
+            if not line:
+                continue
+                
+            request = json.loads(line)
+            req_id = request.get("id")
+            method = request.get("method")
+            params = request.get("params", {})
+            
+            if method == "initialize":
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {
+                            "tools": {}
+                        },
+                        "serverInfo": {
+                            "name": "magistrado-themis-ai",
+                            "version": "0.1.0"
+                        }
+                    }
+                }
+            elif method == "tools/list":
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "tools": [
+                            {
+                                "name": "gerar_laudo",
+                                "description": "Gera um laudo técnico-jurídico automatizado baseado em telemetria física-óptica e assinaturas.",
+                                "inputSchema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "gtid": {"type": "string", "description": "ID Único do Veículo (ex: GD-7A9F-2C4E)"},
+                                        "score": {"type": "number", "description": "Score de confiança do veículo (0.0 a 100.0)"},
+                                        "optical_similarity": {"type": "number", "description": "Similitude óptica microtextural (0.0 a 1.0)"},
+                                        "rf_consistency": {"type": "number", "description": "Consistência de sinal de rádiofrequência (0.0 ou 1.0)"},
+                                        "tamper_evidence": {"type": "number", "description": "Nível de integridade física do selo (0.0 a 1.0)"},
+                                        "empresa": {"type": "string", "description": "Nome da empresa solicitante"},
+                                        "segmento": {"type": "string", "description": "Segmento operacional (frotista, seguradora, outro)"}
+                                    },
+                                    "required": ["gtid", "score", "optical_similarity", "rf_consistency", "tamper_evidence", "empresa", "segmento"]
+                                }
+                            },
+                            {
+                                "name": "verificar_seguranca_ativo",
+                                "description": "Analisa a segurança de ativos integrados externos e conformidade de propriedade intelectual com a Symbeon Labs.",
+                                "inputSchema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "app_domain": {"type": "string", "description": "Domínio da aplicação integrada"},
+                                        "target_market": {"type": "string", "description": "Mercado-alvo da integração (ex: mobilidade, frotista, finanças)"},
+                                        "exposed_keys": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                            "description": "Lista de chaves ou variáveis de ambiente expostas no código"
+                                        }
+                                    },
+                                    "required": ["app_domain", "target_market"]
+                                }
+                            }
+                        ]
+                    }
+                }
+            elif method == "tools/call":
+                tool_name = params.get("name")
+                arguments = params.get("arguments", {})
+                
+                if tool_name == "gerar_laudo":
+                    report_text = generate_forensic_report(arguments)
+                    response = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": report_text
+                                }
+                            ]
+                        }
+                    }
+                elif tool_name == "verificar_seguranca_ativo":
+                    check_result = run_security_check(arguments)
+                    response = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": json.dumps(check_result, indent=2, ensure_ascii=False)
+                                }
+                            ]
+                        }
+                    }
+                else:
+                    response = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "error": {
+                            "code": -32601,
+                            "message": f"Ferramenta desconhecida: {tool_name}"
+                        }
+                    }
+            else:
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {
+                        "code": -32601,
+                        "message": f"Método não encontrado: {method}"
+                    }
+                }
+                
+            sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            sys.stderr.write(f"[ERROR] Falha no processamento: {err_msg}\n")
+            # Envia erro JSON-RPC caso tenhamos o id
+            try:
+                error_response = {
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32603,
+                        "message": str(e),
+                        "data": err_msg
+                    }
+                }
+                sys.stdout.write(json.dumps(error_response) + "\n")
+                sys.stdout.flush()
+            except:
+                pass
+
+if __name__ == "__main__":
+    main()

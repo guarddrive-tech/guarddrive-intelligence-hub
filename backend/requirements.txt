@@ -3,3 +3,5 @@ uvicorn[standard]
 pyjwt
 pydantic[email]
 httpx
+cryptography>=42.0.0
+

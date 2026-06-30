@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import jwt
 import hashlib
 import os
+import re
+from server import generate_forensic_report, run_security_check
 
 app = FastAPI(
     title="GuardDrive Intelligence Hub API",
@@ -416,7 +418,23 @@ async def get_dashboard_overview(current_user: dict = Depends(get_current_user))
 async def create_laudo(event: EventData):
     try:
         report = generate_forensic_report(event.dict())
-        return {"laudo": report, "status": "ok"}
+        
+        # Extrai metadados criptográficos reais do laudo gerado
+        sig_match = re.search(r"Assinatura Digital Ed25519:\s+([a-f0-9]+)", report)
+        pub_match = re.search(r"Chave Pública de Validação:\s+([a-f0-9]+)", report)
+        block_match = re.search(r"Protocolado sob o Bloco L2:\s+(\d+)", report)
+        
+        signature = sig_match.group(1) if sig_match else "N/A"
+        public_key = pub_match.group(1) if pub_match else "N/A"
+        block_num = int(block_match.group(1)) if block_match else None
+        
+        return {
+            "laudo": report,
+            "status": "ok",
+            "signature": signature,
+            "public_key": public_key,
+            "block_num": block_num
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
