@@ -15,9 +15,14 @@ app = FastAPI(
 )
 
 # CORS Configuration
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,https://guarddrive-intelligence-hub.vercel.app,https://guarddrive-intelligence-hub-sh1w4s-projects.vercel.app"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:8000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -119,6 +124,24 @@ users_db = []
 companies_db = []
 leads_db = []
 market_data_db = []
+
+# ─── ADMIN SEED ───────────────────────────────────────────────────
+def seed_admin():
+    """Garante que o usuário admin sempre existe ao iniciar."""
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@guarddrive.tech")
+    admin_password = os.getenv("ADMIN_PASSWORD", "GuardDrive@2026!")
+    if not any(u["email"] == admin_email for u in users_db):
+        users_db.append({
+            "id": 1,
+            "email": admin_email,
+            "password_hash": hashlib.sha256(admin_password.encode()).hexdigest(),
+            "full_name": "Administrador GuardDrive",
+            "company": "GuardDrive Tech",
+            "role": "admin",
+            "created_at": datetime.utcnow()
+        })
+
+seed_admin()
 
 # ─── AUTHENTICATION ───────────────────────────────────────────────
 
