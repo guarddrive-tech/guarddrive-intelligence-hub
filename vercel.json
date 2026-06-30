@@ -1,4 +1,3 @@
 {
-  "regions": ["iad1"],
-  "rootDirectory": "frontend"
+  "regions": ["iad1"]
 }
