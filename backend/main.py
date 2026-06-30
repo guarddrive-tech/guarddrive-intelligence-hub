@@ -117,6 +117,20 @@ class MarketData(BaseModel):
     date_collected: datetime
     notes: Optional[str]
 
+class EventData(BaseModel):
+    gtid: str
+    score: float
+    optical_similarity: float
+    rf_consistency: float
+    tamper_evidence: float
+    empresa: str
+    segmento: str
+
+class SecurityCheckData(BaseModel):
+    app_domain: str
+    target_market: str
+    exposed_keys: Optional[List[str]] = []
+
 # ─── DATABASE MOCK (Replace with real database) ───────────────────
 
 # Mock database for development
@@ -394,6 +408,26 @@ async def get_dashboard_overview(current_user: dict = Depends(get_current_user))
         "leads_by_segment": {},
         "market_trends": []
     }
+
+# ─── MAGISTRADO THEMIS ENDPOINTS ─────────────────────────────────
+
+@app.post("/v1/magistrado/laudo", response_model=dict)
+@app.post("/api/magistrado/laudo", response_model=dict)
+async def create_laudo(event: EventData):
+    try:
+        report = generate_forensic_report(event.dict())
+        return {"laudo": report, "status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/v1/magistrado/security_check", response_model=dict)
+@app.post("/api/magistrado/security_check", response_model=dict)
+async def security_check(data: SecurityCheckData):
+    try:
+        result = run_security_check(data.dict())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ─── HEALTH CHECK ───────────────────────────────────────────────
 
