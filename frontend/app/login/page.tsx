@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '../../lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,7 +22,7 @@ export default function LoginPage() {
       formData.append('username', email)
       formData.append('password', password)
 
-      const response = await fetch('http://localhost:8001/api/auth/login', {
+      const response = await apiFetch('/api/auth/login', {
         method: 'POST',
         body: formData,
       })
@@ -32,7 +33,6 @@ export default function LoginPage() {
 
       const data = await response.json()
       
-      // Store token
       localStorage.setItem('token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
       
@@ -56,7 +56,7 @@ export default function LoginPage() {
           <p className="text-[#6e7491] mt-2">Acesse a Central de Inteligência</p>
         </div>
 
-        <div className="bg-[#1a1a2e] border border-[#1e1e3f] rounded-lg p-6">
+        <div className="bg-[#1a1a2e] border border-[#1e1e3f] rounded-xl p-6 shadow-[0_0_40px_rgba(0,240,255,0.05)]">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#ededed] mb-2">
@@ -67,7 +67,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="seu@email.com"
                 required
               />
@@ -82,14 +82,16 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="••••••••"
                 required
               />
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm">{error}</div>
+              <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2">
+                {error}
+              </div>
             )}
 
             <button

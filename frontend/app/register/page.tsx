@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '../../lib/api'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -22,11 +23,9 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:8001/api/auth/register', {
+      const response = await apiFetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
@@ -34,14 +33,12 @@ export default function RegisterPage() {
         throw new Error('Erro ao criar conta')
       }
 
-      const data = await response.json()
-      
       // Auto login after registration
       const loginFormData = new FormData()
       loginFormData.append('username', formData.email)
       loginFormData.append('password', formData.password)
 
-      const loginResponse = await fetch('http://localhost:8001/api/auth/login', {
+      const loginResponse = await apiFetch('/api/auth/login', {
         method: 'POST',
         body: loginFormData,
       })
@@ -60,7 +57,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1a2e] to-[#0a0a0f]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1a2e] to-[#0a0a0f] py-12">
       <div className="max-w-md w-full mx-4">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-block">
@@ -71,7 +68,7 @@ export default function RegisterPage() {
           <p className="text-[#6e7491] mt-2">Crie sua conta</p>
         </div>
 
-        <div className="bg-[#1a1a2e] border border-[#1e1e3f] rounded-lg p-6">
+        <div className="bg-[#1a1a2e] border border-[#1e1e3f] rounded-xl p-6 shadow-[0_0_40px_rgba(0,240,255,0.05)]">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-[#ededed] mb-2">
@@ -82,7 +79,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="Seu nome completo"
                 required
               />
@@ -97,7 +94,7 @@ export default function RegisterPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="seu@email.com"
                 required
               />
@@ -105,14 +102,14 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="company" className="block text-sm font-medium text-[#ededed] mb-2">
-                Empresa (Opcional)
+                Empresa <span className="text-[#3a3a5c]">(Opcional)</span>
               </label>
               <input
                 id="company"
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({...formData, company: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="Nome da sua empresa"
               />
             </div>
@@ -126,7 +123,7 @@ export default function RegisterPage() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#1e1e3f] rounded-lg text-[#ededed] focus:border-[#00f0ff] focus:outline-none transition-colors placeholder:text-[#3a3a5c]"
                 placeholder="••••••••"
                 required
               />
@@ -149,7 +146,9 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm">{error}</div>
+              <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2">
+                {error}
+              </div>
             )}
 
             <button
