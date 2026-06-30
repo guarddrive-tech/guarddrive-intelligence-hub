@@ -111,7 +111,7 @@ Este relatório e os algoritmos de inferência forense subjacentes constituem
 propriedade intelectual exclusiva da Symbeon Labs, protegidos nos termos da Lei nº
 9.279/1996 (Propriedade Industrial) e da Lei nº 9.609/1998 (Proteção de Software).
 O uso desta tecnologia pela GuardDrive Tech é limitado aos termos do Acordo de
-Licenciamento Exclusivo para logística e segurança. Qualquer tentativa de engenharia
+Licenciamento Exclusivo para mobilidade e telemetria veicular. Qualquer tentativa de engenharia
 reversa do hardware GuardTag ou das chaves de atestação Symbeon resultará na rescisão
 imediata da licença e sanções civis e criminais cabíveis.
 
@@ -160,11 +160,11 @@ def run_security_check(arguments: dict) -> dict:
     compliance_alerts = []
     safety_level = "SEGURO"
     
-    # 1. Verificar mercado licenciado
-    if target_market.lower() not in ["logistica", "logística", "seguranca_de_carga", "segurança de carga"]:
+        # 1. Verificar mercado licenciado
+    if target_market.lower() not in ["mobilidade", "telemetria_veicular", "gestao_de_frotas", "gestão de frotas"]:
         compliance_alerts.append(
             f"AVISO DE MERCADO: O mercado-alvo '{target_market}' difere da concessão de uso exclusiva "
-            "para 'Logística e Segurança de Carga' concedida pela Symbeon Labs. Recomenda-se formalizar "
+            "para 'Mobilidade e Telemetria Veicular' concedida pela Symbeon Labs. Recomenda-se formalizar "
             "aditivo contratual com o escritório RS Advogados."
         )
         safety_level = "ATENÇÃO"
